@@ -16,6 +16,13 @@ if (!room) {
     room = 'learnie'
 }
 
+const Name =urlParams.get('Name');
+const Role =urlParams.get('Role');
+const Room =room;
+
+let connection;
+
+
 // (optional) add server code here
 var SERVER_BASE_URL = 'https://learnie.herokuapp.com';
 fetch(SERVER_BASE_URL + '/room/' + room).then(function(res) {
@@ -31,14 +38,29 @@ fetch(SERVER_BASE_URL + '/room/' + room).then(function(res) {
 
 function initializeSession() {
     var session = OT.initSession(apiKey, sessionId);
-
+    
     // Subscribe to a newly created stream
     session.on('streamCreated', function (event) {
-        session.subscribe(event.stream, 'subscriber', {
-          insertMode: 'append',
-          width: '100%',
-          height: '100%'
-        }, handleError);
+
+    console.log("client connection id :"+event.connection.id);
+        connection.invoke("GetRoleByStreamId",event.connection.id).then((x)=>        
+        {
+            console.log(x)
+            if(x=="Teacher"){
+                console.log("Teacher");
+
+                session.subscribe(event.stream, 'subscriber', {
+                    insertMode: 'append',
+                    width: '100%',
+                    height: '100%'
+                  }, handleError);
+            
+            }else{
+                console.log("Student");
+            
+            }
+        });
+
     });
 
     // Create a publisher
@@ -55,6 +77,20 @@ function initializeSession() {
         handleError(error);
         } else {
         session.publish(publisher, handleError);
+        debugger;
+
+        const ConnectionId = session.connection.id;
+
+        console.log("client connection id :"+ConnectionId);
+
+        connection= new signalR.HubConnectionBuilder()
+        .withUrl(`https://learnie.azurewebsites.net/learnie?ConnectionId=${ConnectionId}&Name=${Name}&Role=${Role}&Room=${Room}`)
+        .withAutomaticReconnect([1000, 2000, 5000, 5000, 10000, 10000, 10000, 20000, 30000])
+        .configureLogging(signalR.LogLevel.Information)
+        .build();
+    
+        connection.start().then(() => console.log("connected")).catch(err => console.error(err));
+        
         }
     });
 }
