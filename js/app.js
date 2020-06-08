@@ -36,19 +36,30 @@ fetch(SERVER_BASE_URL + '/room/' + room).then(function(res) {
 
 
 
+function sleep(milliseconds) {
+    var start = new Date().getTime();
+    for (var i = 0; i < 1e7; i++) {
+      if ((new Date().getTime() - start) > milliseconds){
+        break;
+      }
+    }
+  }
+
+
+
 function initializeSession() {
     var session = OT.initSession(apiKey, sessionId);
     
     // Subscribe to a newly created stream
     session.on('streamCreated', function (event) {
 
-        connection.invoke("GetRoleByStreamId",event.stream.connection.id).then((x)=>        
-        {     
-            console.log("client connection id :"+ event.stream.connection.id +"Role"+ x.Role +"Name" +X.Name);            
-            console.log(x)
-            if( x=="Teacher" || Role == "Teacher"){
-                console.log("Teacher");
+        sleep(1500);
 
+        connection.invoke("GetClientByStreamId",event.stream.connection.id).then((x)=>        
+        {    
+            console.log("client stream id : "+ event.stream.connection.id +" Role "+ x.role+" Name "+ x.name);            
+
+            if( !x && x.role == "Teacher" || Role == "Teacher"){
                 session.subscribe(event.stream, 'subscriber', {
                     insertMode: 'append',
                     width: '100%',
@@ -78,10 +89,10 @@ function initializeSession() {
 
         const ConnectionId = session.connection.id;
 
-        console.log("My connection id :" + Name+ ConnectionId);
+        console.log("My StreamId id : " + ConnectionId);
 
         connection= new signalR.HubConnectionBuilder()
-                    .withUrl(`https://learnie.azurewebsites.net/learnie?ConnectionId=${ConnectionId}&Name=${Name}&Role=${Role}&Room=${Room}`)
+                    .withUrl(`https://learnie.azurewebsites.net/learnie?StreamId=${ConnectionId}&Name=${Name}&Role=${Role}&Room=${Room}`)
                     .withAutomaticReconnect([1000, 2000, 5000, 5000, 10000, 10000, 10000, 20000, 30000])
                     .configureLogging(signalR.LogLevel.Information)
                     .build();
