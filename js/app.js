@@ -44,9 +44,10 @@ function initializeSession() {
 
     console.log("client connection id :"+event.connection.id);
         connection.invoke("GetRoleByStreamId",event.connection.id).then((x)=>        
-        {
+        {           
+          
             console.log(x)
-            if(x=="Teacher"){
+            if( x=="Teacher" || Role == "Teacher"){
                 console.log("Teacher");
 
                 session.subscribe(event.stream, 'subscriber', {
@@ -56,9 +57,8 @@ function initializeSession() {
                   }, handleError);
             
             }else{
-                console.log("Student");
-            
-            }
+                console.log("Student");            
+            }           
         });
 
     });
