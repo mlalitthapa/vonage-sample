@@ -10,6 +10,7 @@ function handleError(error) {
     }
 }
 
+
 var urlParams = new URLSearchParams(window.location.search)
 var room = urlParams.get('room')
 if (!room) {
@@ -20,8 +21,14 @@ const Name =urlParams.get('Name');
 const Role =urlParams.get('Role');
 const Room =room;
 
-let connection;
+const connection= new signalR.HubConnectionBuilder()
+            .withUrl(`https://learnie.azurewebsites.net/learnie?Name=${Name}&Role=${Role}&Room=${Room}`)
+            .withAutomaticReconnect([1000, 2000, 5000, 5000, 10000, 10000, 10000, 20000, 30000])
+            .configureLogging(signalR.LogLevel.Information)
+            .build();
 
+connection.start().then(() => console.log("signalr channel connected")).catch(err => console.error(err));
+console.log("signalr channel connected");
 
 // (optional) add server code here
 var SERVER_BASE_URL = 'https://learnie.herokuapp.com';
@@ -37,33 +44,34 @@ fetch(SERVER_BASE_URL + '/room/' + room).then(function(res) {
 
 function initializeSession() {
     var session = OT.initSession(apiKey, sessionId);
-    
     // Subscribe to a newly created stream
-    session.on('streamCreated', function (event) {
+    session.on('streamCreated', function (event) {    
 
-        console.log("streamCreated"+event.stream.connection.id);
+        console.log("streamCreated "+event.stream.connection.id);  
+
+        console.assert(connection.state === signalR.HubConnectionState.Connected);
 
         connection.invoke("GetClientByStreamId",event.stream.connection.id).then((x)=>        
-        {    
-            console.log("client stream id : "+ event.stream.connection.id +" Role "+ x.role+" Name "+ x.name);    
-
-            if(Role =="Student"){
-                if(x.role =="Teacher"){
+            {    
+                console.log("client stream id : "+ event.stream.connection.id +" Role "+ x.role+" Name "+ x.name);    
+    
+                if(Role =="Student"){
+                    if(x.role =="Teacher"){
+                        session.subscribe(event.stream, 'subscriber', {
+                            insertMode: 'append',
+                            width: '100%',
+                            height: '100%'
+                        }, handleError);
+                    }
+                }
+                else{
                     session.subscribe(event.stream, 'subscriber', {
                         insertMode: 'append',
-                        width: '100%',
-                        height: '100%'
-                    }, handleError);
-                }
-            }
-            else{
-                session.subscribe(event.stream, 'subscriber', {
-                    insertMode: 'append',
-                    width: '320px',
-                    height: '200px'
-                  }, handleError);            
-            }          
-        });
+                        width: '320px',
+                        height: '200px'
+                      }, handleError);            
+                }          
+            });
     });
 
     // Create a publisher
@@ -82,18 +90,22 @@ function initializeSession() {
         } else {
         session.publish(publisher, handleError);
 
-        const ConnectionId = session.connection.id;
+        const ConnectionId = session.connection.id;       
 
-        console.log("My StreamId id : " + ConnectionId);
-
-        connection= new signalR.HubConnectionBuilder()
-                    .withUrl(`https://learnie.azurewebsites.net/learnie?StreamId=${ConnectionId}&Name=${Name}&Role=${Role}&Room=${Room}`)
-                    .withAutomaticReconnect([1000, 2000, 5000, 5000, 10000, 10000, 10000, 20000, 30000])
-                    .configureLogging(signalR.LogLevel.Information)
-                    .build();
-    
-        connection.start().then(() => console.log("connected")).catch(err => console.error(err));
-        
+        console.log("My StreamId id : " + ConnectionId);    
+        console.assert(connection.state === signalR.HubConnectionState.Connected);
+  
+        connection.invoke("SetStreamId",ConnectionId);        
         }
     });
 }
+
+
+function sleep(milliseconds) {
+    var start = new Date().getTime();
+    for (var i = 0; i < 1e7; i++) {
+      if ((new Date().getTime() - start) > milliseconds){
+        break;
+      }
+    }
+  }
