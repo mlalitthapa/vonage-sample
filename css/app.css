@@ -20,6 +20,11 @@ body, html {
     z-index: 10;
 }
 
+#subscriber .OT_subscriber {
+    border: 2px solid;
+    float: left;
+}
+
 #publisher {
     position: absolute;
     width: 360px;

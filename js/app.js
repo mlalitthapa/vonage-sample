@@ -59,9 +59,9 @@ function initializeSession() {
             else{
                 session.subscribe(event.stream, 'subscriber', {
                     insertMode: 'append',
-                    width: '100%',
-                    height: '100%'
-                }, handleError);
+                    width: '320px',
+                    height: '200px'
+                  }, handleError);            
             }          
         });
     });
@@ -70,7 +70,8 @@ function initializeSession() {
     var publisher = OT.initPublisher('publisher', {
         insertMode: 'append',
         width: '100%',
-        height: '100%'
+        height: '100%',
+        name: Name
     }, handleError);
 
     // Connect to the session
