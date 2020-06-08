@@ -42,10 +42,9 @@ function initializeSession() {
     // Subscribe to a newly created stream
     session.on('streamCreated', function (event) {
 
-    console.log("client connection id :"+event.connection.id);
-        connection.invoke("GetRoleByStreamId",event.connection.id).then((x)=>        
-        {           
-          
+        connection.invoke("GetRoleByStreamId",event.stream.connection.id).then((x)=>        
+        {     
+            console.log("client connection id :"+ event.stream.connection.id +"Role"+ x.Role +"Name" +X.Name);            
             console.log(x)
             if( x=="Teacher" || Role == "Teacher"){
                 console.log("Teacher");
@@ -60,7 +59,6 @@ function initializeSession() {
                 console.log("Student");            
             }           
         });
-
     });
 
     // Create a publisher
@@ -77,17 +75,16 @@ function initializeSession() {
         handleError(error);
         } else {
         session.publish(publisher, handleError);
-        debugger;
 
         const ConnectionId = session.connection.id;
 
-        console.log("client connection id :"+ConnectionId);
+        console.log("My connection id :" + Name+ ConnectionId);
 
         connection= new signalR.HubConnectionBuilder()
-        .withUrl(`https://learnie.azurewebsites.net/learnie?ConnectionId=${ConnectionId}&Name=${Name}&Role=${Role}&Room=${Room}`)
-        .withAutomaticReconnect([1000, 2000, 5000, 5000, 10000, 10000, 10000, 20000, 30000])
-        .configureLogging(signalR.LogLevel.Information)
-        .build();
+                    .withUrl(`https://learnie.azurewebsites.net/learnie?ConnectionId=${ConnectionId}&Name=${Name}&Role=${Role}&Room=${Room}`)
+                    .withAutomaticReconnect([1000, 2000, 5000, 5000, 10000, 10000, 10000, 20000, 30000])
+                    .configureLogging(signalR.LogLevel.Information)
+                    .build();
     
         connection.start().then(() => console.log("connected")).catch(err => console.error(err));
         
