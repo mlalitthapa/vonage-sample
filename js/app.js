@@ -53,7 +53,7 @@ function initializeSession() {
     // Subscribe to a newly created stream
     session.on('streamCreated', function (event) {
 
-        sleep(1200);
+        sleep(1500);
 
         connection.invoke("GetClientByStreamId",event.stream.connection.id).then((x)=>        
         {    
