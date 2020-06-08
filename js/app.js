@@ -21,57 +21,52 @@ const Name =urlParams.get('Name');
 const Role =urlParams.get('Role');
 const Room =room;
 
-const connection= new signalR.HubConnectionBuilder()
-            .withUrl(`https://learnie.azurewebsites.net/learnie?Name=${Name}&Role=${Role}&Room=${Room}`)
-            .withAutomaticReconnect([1000, 2000, 5000, 5000, 10000, 10000, 10000, 20000, 30000])
-            .configureLogging(signalR.LogLevel.Information)
-            .build();
+// Create new signalR connection
+const connection = new signalR.HubConnectionBuilder()
+    .withUrl(`https://learnie.azurewebsites.net/learnie?Name=${Name}&Role=${Role}&Room=${Room}`)
+    .withAutomaticReconnect([1000, 2000, 5000, 5000, 10000, 10000, 10000, 20000, 30000])
+    .configureLogging(signalR.LogLevel.Information)
+    .build();
 
-connection.start().then(() => console.log("signalr channel connected")).catch(err => console.error(err));
-console.log("signalr channel connected");
-
-// (optional) add server code here
-var SERVER_BASE_URL = 'https://learnie.herokuapp.com';
-fetch(SERVER_BASE_URL + '/room/' + room).then(function(res) {
-  return res.json()
-}).then(function(res) {
-  apiKey = res.apiKey;
-  sessionId = res.sessionId;
-  token = res.token;
-  initializeSession();
-}).catch(handleError);
-
+// Initialize connection
+connection.start().then(() => {
+    // Start vonage connection after signalR connection is successfull
+    const SERVER_BASE_URL = 'https://learnie.herokuapp.com';
+    fetch(SERVER_BASE_URL + '/room/' + room).then(function(res) {
+        return res.json()
+    }).then(function(res) {
+        apiKey = res.apiKey;
+        sessionId = res.sessionId;
+        token = res.token;
+        initializeSession();
+    }).catch(handleError);
+}).catch(err => console.error(err));
 
 function initializeSession() {
     var session = OT.initSession(apiKey, sessionId);
     // Subscribe to a newly created stream
-    session.on('streamCreated', function (event) {    
+    session.on('streamCreated', function (event) {
 
-        console.log("streamCreated "+event.stream.connection.id);  
+        const connectionId = event.stream.connection.id
+        console.log("streamCreated " + connectionId);
 
-        console.assert(connection.state === signalR.HubConnectionState.Connected);
+        connection.invoke("GetClientByStreamId", connectionId).then(({role, name}) => {    
+            console.log({connectionId, role, name});
 
-        connection.invoke("GetClientByStreamId",event.stream.connection.id).then((x)=>        
-            {    
-                console.log("client stream id : "+ event.stream.connection.id +" Role "+ x.role+" Name "+ x.name);    
-    
-                if(Role =="Student"){
-                    if(x.role =="Teacher"){
-                        session.subscribe(event.stream, 'subscriber', {
-                            insertMode: 'append',
-                            width: '100%',
-                            height: '100%'
-                        }, handleError);
-                    }
-                }
-                else{
-                    session.subscribe(event.stream, 'subscriber', {
-                        insertMode: 'append',
-                        width: '320px',
-                        height: '200px'
-                      }, handleError);            
-                }          
-            });
+            if(Role == 'Student' && role == 'Teacher'){
+                session.subscribe(event.stream, 'subscriber', {
+                    insertMode: 'append',
+                    width: '100%',
+                    height: '100%'
+                }, handleError);
+            } else if (Role == 'Teacher') {
+                session.subscribe(event.stream, 'subscriber', {
+                    insertMode: 'append',
+                    width: '320px',
+                    height: '200px'
+                }, handleError);
+            }
+        });
     });
 
     // Create a publisher
@@ -86,26 +81,15 @@ function initializeSession() {
     session.connect(token, function(error) {
         // If the connection is successful, publish to the session
         if (error) {
-        handleError(error);
+            handleError(error);
         } else {
-        session.publish(publisher, handleError);
+            session.publish(publisher, handleError);
 
-        const ConnectionId = session.connection.id;       
+            const ConnectionId = session.connection.id;       
 
-        console.log("My StreamId id : " + ConnectionId);    
-        console.assert(connection.state === signalR.HubConnectionState.Connected);
-  
-        connection.invoke("SetStreamId",ConnectionId);        
+            console.log("My StreamId id : " + ConnectionId);
+            // Connect signalR channel
+            connection.invoke("SetStreamId", ConnectionId);
         }
     });
 }
-
-
-function sleep(milliseconds) {
-    var start = new Date().getTime();
-    for (var i = 0; i < 1e7; i++) {
-      if ((new Date().getTime() - start) > milliseconds){
-        break;
-      }
-    }
-  }
