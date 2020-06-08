@@ -35,40 +35,34 @@ fetch(SERVER_BASE_URL + '/room/' + room).then(function(res) {
 }).catch(handleError);
 
 
-
-function sleep(milliseconds) {
-    var start = new Date().getTime();
-    for (var i = 0; i < 1e7; i++) {
-      if ((new Date().getTime() - start) > milliseconds){
-        break;
-      }
-    }
-  }
-
-
-
 function initializeSession() {
     var session = OT.initSession(apiKey, sessionId);
     
     // Subscribe to a newly created stream
     session.on('streamCreated', function (event) {
 
-        sleep(1500);
+        console.log("streamCreated"+event.stream.connection.id);
 
         connection.invoke("GetClientByStreamId",event.stream.connection.id).then((x)=>        
         {    
-            console.log("client stream id : "+ event.stream.connection.id +" Role "+ x.role+" Name "+ x.name);            
+            console.log("client stream id : "+ event.stream.connection.id +" Role "+ x.role+" Name "+ x.name);    
 
-            if( !x && x.role == "Teacher" || Role == "Teacher"){
+            if(Role =="Student"){
+                if(x.role =="Teacher"){
+                    session.subscribe(event.stream, 'subscriber', {
+                        insertMode: 'append',
+                        width: '100%',
+                        height: '100%'
+                    }, handleError);
+                }
+            }
+            else{
                 session.subscribe(event.stream, 'subscriber', {
                     insertMode: 'append',
                     width: '100%',
                     height: '100%'
-                  }, handleError);
-            
-            }else{
-                console.log("Student");            
-            }           
+                }, handleError);
+            }          
         });
     });
 
