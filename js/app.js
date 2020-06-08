@@ -62,8 +62,8 @@ function initializeSession() {
             if( !x && x.role == "Teacher" || Role == "Teacher"){
                 session.subscribe(event.stream, 'subscriber', {
                     insertMode: 'append',
-                    width: '100%',
-                    height: '100%'
+                    width: '320px',
+                    height: '200px'
                   }, handleError);
             
             }else{
@@ -76,7 +76,8 @@ function initializeSession() {
     var publisher = OT.initPublisher('publisher', {
         insertMode: 'append',
         width: '100%',
-        height: '100%'
+        height: '100%',
+        name: Name
     }, handleError);
 
     // Connect to the session
