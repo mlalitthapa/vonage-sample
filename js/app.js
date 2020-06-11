@@ -20,7 +20,8 @@ const streamOptions = {
         width: 960,
         height: 720
     },
-    resolution: "640x480"
+    resolution: "640x480",
+    preferredFrameRate: 10
 }
 
 var urlParams = new URLSearchParams(window.location.search)
