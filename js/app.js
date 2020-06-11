@@ -10,6 +10,18 @@ function handleError(error) {
     }
 }
 
+// Video/audio options for stream
+const streamOptions = {
+    insertMode: 'append',
+    width: '100%',
+    height: '100%',
+    audioBitrate: 20000,
+    maxResolution: {
+        width: 960,
+        height: 720
+    },
+    resolution: "640x480"
+}
 
 var urlParams = new URLSearchParams(window.location.search)
 let room = urlParams.get('room') || 'learnie';
@@ -39,37 +51,18 @@ function initializeSession() {
         console.log({name, role})
 
         if(Role == 'Student' && role == 'Teacher'){
-            session.subscribe(stream, 'subscriber', {
-                insertMode: 'append',
-                width: '100%',
-                height: '100%',
-                audioBitrate: 20000,
-                resolution: "640x480"
-            }, handleError);
+            session.subscribe(stream, 'subscriber', Object.assign(streamOptions, {name}), handleError);
         } else if (Role == 'Teacher') {
-            session.subscribe(stream, 'subscriber', {
-                insertMode: 'append',
+            session.subscribe(stream, 'subscriber', Object.assign(streamOptions, {
+                name,
                 width: '320px',
                 height: '200px',
-                audioBitrate: 20000,
-                resolution: "640x480"
-            }, handleError);
+            }), handleError);
         }
     });
 
     // Create a publisher
-    var publisher = OT.initPublisher('publisher', {
-        insertMode: 'append',
-        width: '100%',
-        height: '100%',
-        name: Name,
-        audioBitrate: 20000,
-        maxResolution: {
-            width: 960,
-            height: 720
-        },
-        resolution: "640x480"
-    }, handleError);
+    var publisher = OT.initPublisher('publisher', Object.assign(streamOptions, {name: Name,}), handleError);
 
     // Connect to the session
     session.connect(token, function(error) {
